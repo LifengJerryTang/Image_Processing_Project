@@ -1,7 +1,8 @@
 import express from "express";
-import {promises as fs} from "fs";
+import {promises as fs, existsSync} from "fs";
 import sharp from 'sharp'
 import path from "path";
+import {checkQueryParams} from './middleware/check-query-params';
 
 const app = express();
 const port = 3000;
@@ -9,32 +10,40 @@ const port = 3000;
 app.listen(port, async () => {
     console.log(`server started at http://localhost:${port}`);
 
-    try {
-        let thumbDir = path.resolve(__dirname, '../thumb');
+    let thumbDir = path.resolve(__dirname, '../thumb');
+
+    if (!existsSync(thumbDir)) {
         await fs.mkdir(thumbDir);
-    } catch (error) {
-        console.log("Thumbnail directory already exists! No actions need to be taken here.");
     }
 
 });
 
-app.get("/api/images", async (req, res, next) => {
+app.get("/api/images", checkQueryParams,
+    async (req, res, next) => {
 
-    console.log(req.query.filename!)
     const filename: string = req.query.filename! as string;
     const width: number = +req.query.width!;
     const height: number = +req.query.height!;
 
-    const originalImageFile: Buffer =
-        await fs.readFile(path.resolve(__dirname, `../images/${filename}.jpg`));
+    const originalFilePath = path.resolve(__dirname, `../images/${filename}.jpg`);
 
-    const thumbFilePath = path.resolve(__dirname, `../thumb/${filename}_thumb.jpg`)
+    if(!existsSync(originalFilePath)) {
+        res.status(404).send(`Image named ${filename} DOES NOT EXISTS!`);
+        return;
+    }
 
-    await sharp(originalImageFile)
-        .resize({width, height})
-        .toFile(thumbFilePath);
+    const originalImageFile: Buffer = await fs.readFile(originalFilePath);
+    const thumbFilePath =
+        path.resolve(__dirname, `../thumb/${filename}_thumb_${width}_${height}.jpg`)
+
+    if (!existsSync(thumbFilePath)) {
+        await sharp(originalImageFile)
+            .resize({width, height})
+            .toFile(thumbFilePath);
+    }
 
     res.status(200).sendFile(thumbFilePath);
+
 });
 
 
