@@ -1,6 +1,6 @@
-import express from "express";
-import {promises as fs, existsSync} from "fs";
-import path from "path";
+import express from 'express';
+import { promises as fs, existsSync } from "fs";
+import path from 'path';
 import imagesRouter from './routes/images'
 
 const app = express();
