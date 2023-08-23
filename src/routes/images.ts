@@ -1,4 +1,4 @@
-import { promises as fs, existsSync } from 'fgis';
+import { promises as fs, existsSync } from 'fs';
 import { Router } from 'express';
 import sharp from 'sharp';
 import path from 'path';
